@@ -1,4 +1,4 @@
-musl as a whole is licensed under the following standard MIT license:
+osoap-libc is a fork of musl, and as a whole is licensed under the following standard MIT license:
 
 ----------------------------------------------------------------------
 Copyright © 2005-2020 Rich Felker, et al.
@@ -60,6 +60,7 @@ Hauke Mehrtens
 He X
 Hiltjo Posthuma
 Isaac Dunham
+Jasper Hugunin
 Jaydeep Patil
 Jens Gustedt
 Jeremy Huntwork
