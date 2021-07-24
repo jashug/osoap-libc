@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+./configure \
+  --prefix=../sysroot \
+  --syslibdir=../sysroot/lib \
+  --target=wasm32 \
+  --enable-wrapper=no \
+  --disable-shared \
+  CC="clang --target=wasm32 -Wl,--no-entry" \
+  CROSS_COMPILE=llvm-
