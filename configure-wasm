@@ -5,5 +5,5 @@
   --target=wasm32 \
   --enable-wrapper=no \
   --disable-shared \
-  CC="clang --target=wasm32 -Wl,--no-entry" \
+  CC="clang --target=wasm32" \
   CROSS_COMPILE=llvm-

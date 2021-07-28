@@ -1,19 +1,14 @@
-#include <features.h>
-#include "libc.h"
+extern void __wasm_call_ctors(void);
+extern int main(void);
 
-#define START "_start"
+__attribute__((export_name("_start")))
+void _start(void) {
+  // The linker synthesizes this to call constructors.
+  __wasm_call_ctors();
 
-#include "crt_arch.h"
+  // Call `main` which will either be the application's zero-argument
+  // `main` function or a libc routine which calls `__main_argc_argv`.
+  int r = main();
 
-int main();
-weak void _init();
-weak void _fini();
-int __libc_start_main(int (*)(), int, char **,
-	void (*)(), void(*)(), void(*)());
-
-void _start_c(long *p)
-{
-	int argc = p[0];
-	char **argv = (void *)(p+1);
-	__libc_start_main(main, argc, argv, _init, _fini, 0);
+  // TODO: report r as exit code
 }
