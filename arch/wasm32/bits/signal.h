@@ -9,7 +9,7 @@
 
 // This is pretty much unused, I think. Can probably shrink to a byte or a word.
 typedef struct {
-  unsigned long __space[32];
+  long pc; // This is mostly useless, but accessed in src/thread/pthread_cancel.c through MC_PC
 } mcontext_t;
 
 struct sigaltstack {
