@@ -57,10 +57,18 @@ void *__copy_tls(unsigned char *mem)
 #else
 	dtv = (uintptr_t *)mem;
 
+	// For the main thread:
+	// libc.tls_size == size of mem =
+	// 2 pointers + struct pthread
+	// + main_tls.size + libc.tls_align (libc.tls_align >= MIN_TLS_ALIGN)
+	// + rounding up to MIN_TLS_ALIGN
 	mem += libc.tls_size - sizeof(struct pthread);
+	// take it out of the libc.tls_align + rounding padding
 	mem -= (uintptr_t)mem & (libc.tls_align-1);
+	// td is aligned to libc.tls_align
 	td = (pthread_t)mem;
 
+	// Put the thread-local blocks right before td
 	for (i=1, p=libc.tls_head; p; i++, p=p->next) {
 		dtv[i] = (uintptr_t)(mem - p->offset) + DTP_OFFSET;
 		memcpy(mem - p->offset, p->image, p->len);
@@ -104,20 +112,27 @@ static void static_init_tls(size_t *aux)
 
 	if (tls_phdr) {
 		main_tls.image = (void *)(base + tls_phdr->p_vaddr);
+		// The length of the initialized section: copy out of the ELF file
 		main_tls.len = tls_phdr->p_filesz;
+		// len + an unitialized section size
 		main_tls.size = tls_phdr->p_memsz;
+		// Alignment of the combination of initialized
+		// and unitialized sections
 		main_tls.align = tls_phdr->p_align;
 		libc.tls_cnt = 1;
 		libc.tls_head = &main_tls;
 	}
 
+	// Round main_tls.size up so that image + size is aligned
 	main_tls.size += (-main_tls.size - (uintptr_t)main_tls.image)
 		& (main_tls.align-1);
 #ifdef TLS_ABOVE_TP
+	// Make offset congruent to image mod align
 	main_tls.offset = GAP_ABOVE_TP;
 	main_tls.offset += (-GAP_ABOVE_TP + (uintptr_t)main_tls.image)
 		& (main_tls.align-1);
 #else
+	// Set offset to the (aligned) end of the tls section
 	main_tls.offset = main_tls.size;
 #endif
 	if (main_tls.align < MIN_TLS_ALIGN) main_tls.align = MIN_TLS_ALIGN;
@@ -128,6 +143,7 @@ static void static_init_tls(size_t *aux)
 		+ main_tls.offset
 #endif
 		+ main_tls.size + main_tls.align
+		// Round up to MIN_TLS_ALIGN (the & applies to all the terms)
 		+ MIN_TLS_ALIGN-1 & -MIN_TLS_ALIGN;
 
 	if (libc.tls_size > sizeof builtin_tls) {
