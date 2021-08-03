@@ -22,6 +22,14 @@ void *__mmap(void *start, size_t len, int prot, int flags, int fd, off_t off)
 		errno = ENOMEM;
 		return MAP_FAILED;
 	}
+	if (flags == MAP_PRIVATE|MAP_ANON) {
+		size_t ret = __builtin_wasm_memory_grow(0, len + ((-len) & (PAGESIZE-1)));
+		if (ret == -1) {
+			errno = ENOMEM;
+			return MAP_FAILED;
+		}
+		return (void *)(ret * PAGESIZE)
+	}
 	if (flags & MAP_FIXED) {
 		__vm_wait();
 	}
