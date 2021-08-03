@@ -58,6 +58,7 @@ struct pthread {
 	volatile int killlock[1];
 	char *dlerror_buf;
 	void *stdio_locks;
+        uintptr_t wasm_builtin_dtv[2];
 
 	/* Part 3 -- the positions of these fields relative to
 	 * the end of the structure is external and internal ABI. */

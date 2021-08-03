@@ -1,8 +1,11 @@
+extern void __wasm_setup_tls();
 extern void __wasm_call_ctors(void);
 extern int main(void);
 
 __attribute__((export_name("_start")))
 void _start(void) {
+  __wasm_setup_tls();
+
   // The linker synthesizes this to call constructors.
   __wasm_call_ctors();
 
