@@ -57,9 +57,7 @@ struct meta *alloc_meta(void)
 		int need_unprotect = 1;
 		if (!ctx.avail_meta_area_count && ctx.brk!=-1) {
 			uintptr_t new = ctx.brk + pagesize;
-			int need_guard = 0;
 			if (!ctx.brk) {
-				need_guard = 1;
 				ctx.brk = brk(0);
 				// some ancient kernels returned _ebss
 				// instead of next page as initial brk.
@@ -69,8 +67,6 @@ struct meta *alloc_meta(void)
 			if (brk(new) != new) {
 				ctx.brk = -1;
 			} else {
-				if (need_guard) mmap((void *)ctx.brk, pagesize,
-					PROT_NONE, MAP_ANON|MAP_PRIVATE|MAP_FIXED, -1, 0);
 				ctx.brk = new;
 				ctx.avail_meta_areas = (void *)(new - pagesize);
 				ctx.avail_meta_area_count = pagesize>>12;
