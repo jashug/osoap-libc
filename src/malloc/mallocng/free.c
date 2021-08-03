@@ -144,6 +144,9 @@ void free(void *p)
 	struct mapinfo mi = nontrivial_free(g, idx);
 	unlock();
 	if (mi.len) {
+		// Consider donating this space rather than leaking it.
+		// Would still want to avoid repeatedly malloc-then-free of
+		// >= MMAP_THRESHOLD chunks.
 		int e = errno;
 		munmap(mi.base, mi.len);
 		errno = e;
