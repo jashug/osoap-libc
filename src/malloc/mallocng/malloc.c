@@ -54,40 +54,15 @@ struct meta *alloc_meta(void)
 	if (pagesize < 4096) pagesize = 4096;
 	if ((m = dequeue_head(&ctx.free_meta_head))) return m;
 	if (!ctx.avail_meta_count) {
-		int need_unprotect = 1;
-		if (!ctx.avail_meta_area_count && ctx.brk!=-1) {
-			uintptr_t new = ctx.brk + pagesize;
-			if (!ctx.brk) {
-				ctx.brk = brk(0);
-				// some ancient kernels returned _ebss
-				// instead of next page as initial brk.
-				ctx.brk += -ctx.brk & (pagesize-1);
-				new = ctx.brk + 2*pagesize;
-			}
-			if (brk(new) != new) {
-				ctx.brk = -1;
-			} else {
-				ctx.brk = new;
-				ctx.avail_meta_areas = (void *)(new - pagesize);
-				ctx.avail_meta_area_count = pagesize>>12;
-				need_unprotect = 0;
-			}
-		}
 		if (!ctx.avail_meta_area_count) {
-			size_t n = 2UL << ctx.meta_alloc_shift;
-			p = mmap(0, n*pagesize, PROT_NONE,
-				MAP_PRIVATE|MAP_ANON, -1, 0);
-			if (p==MAP_FAILED) return 0;
-			ctx.avail_meta_areas = p + pagesize;
-			ctx.avail_meta_area_count = (n-1)*(pagesize>>12);
-			ctx.meta_alloc_shift++;
+			ctx.brk = __builtin_wasm_memory_grow(0, pagesize / PAGESIZE);
+			if (ctx.brk == -1) return 0;
+			ctx.brk *= PAGESIZE;
+			ctx.avail_meta_areas = (void *)ctx.brk;
+			ctx.brk += pagesize;
+			ctx.avail_meta_area_count = pagesize >> 12;
 		}
 		p = ctx.avail_meta_areas;
-		if ((uintptr_t)p & (pagesize-1)) need_unprotect = 0;
-		if (need_unprotect)
-			if (mprotect(p, pagesize, PROT_READ|PROT_WRITE)
-			    && errno != ENOSYS)
-				return 0;
 		ctx.avail_meta_area_count--;
 		ctx.avail_meta_areas = p + 4096;
 		if (ctx.meta_area_tail) {
