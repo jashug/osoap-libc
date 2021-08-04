@@ -28,7 +28,7 @@ void *__mmap(void *start, size_t len, int prot, int flags, int fd, off_t off)
 			errno = ENOMEM;
 			return MAP_FAILED;
 		}
-		return (void *)(ret * PAGESIZE)
+		return (void *)(ret * PAGESIZE);
 	}
 	if (flags & MAP_FIXED) {
 		__vm_wait();
