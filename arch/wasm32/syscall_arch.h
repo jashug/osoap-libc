@@ -4,7 +4,7 @@
 // TODO: These definitions are stubs
 
 // Call out to javascript to log syscalls when they are made
-__attribute__((import_name("log_syscall")))
+__attribute__((import_module("diagnostic"),import_name("log_syscall")))
 long __wasm_log_syscall(long n);
 
 static __inline long __syscall0(long n) {
