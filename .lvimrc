@@ -1,0 +1,3 @@
+if &ft == "c" || &ft == "cpp"
+  setlocal shiftwidth=8 noexpandtab
+endif

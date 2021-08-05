@@ -1,5 +1,5 @@
 #if defined(_POSIX_SOURCE) || defined(_POSIX_C_SOURCE) \
- || defined(_XOPEN_SOURCE) || defined(_GNU_SOURCE) || defined(_BSD_SOURCE)
+	|| defined(_XOPEN_SOURCE) || defined(_GNU_SOURCE) || defined(_BSD_SOURCE)
 
 #if defined(_XOPEN_SOURCE) || defined(_GNU_SOURCE) || defined(_BSD_SOURCE)
 // TODO: consider reducing these numbers, since we have the implicit stack as well
@@ -9,22 +9,22 @@
 
 // This is pretty much unused, I think. Can probably shrink to a byte or a word.
 typedef struct {
-  long pc; // This is mostly useless, but accessed in src/thread/pthread_cancel.c through MC_PC
+	long pc; // This is mostly useless, but accessed in src/thread/pthread_cancel.c through MC_PC
 } mcontext_t;
 
 struct sigaltstack {
-  void *ss_sp;
-  int ss_flags;
-  size_t ss_size;
+	void *ss_sp;
+	int ss_flags;
+	size_t ss_size;
 };
 
 typedef struct __ucontext {
-  // Can try deleting uc_flags, I'm not sure it's being used
-  unsigned long uc_flags;
-  struct __ucontext *uc_link;
-  stack_t uc_stack;
-  mcontext_t uc_mcontext;
-  sigset_t uc_sigmask;
+	// Can try deleting uc_flags, I'm not sure it's being used
+	unsigned long uc_flags;
+	struct __ucontext *uc_link;
+	stack_t uc_stack;
+	mcontext_t uc_mcontext;
+	sigset_t uc_sigmask;
 } ucontext_t;
 
 #define SA_NOCLDSTOP  1
