@@ -1,3 +1,15 @@
-if &ft == "c" || &ft == "cpp"
+if fnamemodify(g:localvimrc_file, ":e") == "h"
+  setfiletype c
+endif
+
+if &ft == "c"
   setlocal shiftwidth=8 noexpandtab
 endif
+
+let b:ale_c_cc_executable = 'clang'
+let b:ale_c_cc_options = '--target=wasm32 --std=c99 -w -Wno-pointer-to-int-cast -Werror=implicit-function-declaration -Werror=implicit-int -Werror=pointer-sign -Werror=pointer-arith -Werror=int-conversion -Werror=incompatible-pointer-types -Qunused-arguments -Waddress -Warray-bounds -Wchar-subscripts -Wduplicate-decl-specifier -Winit-self -Wreturn-type -Wsequence-point -Wstrict-aliasing -Wunused-function -Wunused-label -Wunused-variable'
+
+let b:ale_linters =
+      \ {
+      \ 'c' : ['cc'],
+      \ }
