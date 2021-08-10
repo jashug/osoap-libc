@@ -1,4 +1,5 @@
 #include "pthread_impl.h"
+#include "syscall.h"
 
 void __wait(volatile int *addr, volatile int *waiters, int val, int priv)
 {

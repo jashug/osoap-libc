@@ -1,6 +1,7 @@
 #include <time.h>
 #include <limits.h>
 #include "pthread_impl.h"
+#include "syscall.h"
 
 #define IS32BIT(x) !((x)+0x80000000ULL>>32)
 

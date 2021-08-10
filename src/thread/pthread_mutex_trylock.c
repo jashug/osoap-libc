@@ -1,4 +1,5 @@
 #include "pthread_impl.h"
+#include "syscall.h"
 
 int __pthread_mutex_trylock_owner(pthread_mutex_t *m)
 {

@@ -1,4 +1,5 @@
-if fnamemodify(g:localvimrc_file, ":e") == "h"
+let s:extension = fnamemodify(g:localvimrc_file, ":e")
+if g:localvimrc_file =~ '\.h\(\.in\)\?$'
   setfiletype c
 endif
 
@@ -6,10 +7,12 @@ if &ft == "c"
   setlocal shiftwidth=8 noexpandtab
 endif
 
-let b:ale_c_cc_executable = 'clang'
-let b:ale_c_cc_options = '--target=wasm32 --std=c99 -w -Wno-pointer-to-int-cast -Werror=implicit-function-declaration -Werror=implicit-int -Werror=pointer-sign -Werror=pointer-arith -Werror=int-conversion -Werror=incompatible-pointer-types -Qunused-arguments -Waddress -Warray-bounds -Wchar-subscripts -Wduplicate-decl-specifier -Winit-self -Wreturn-type -Wsequence-point -Wstrict-aliasing -Wunused-function -Wunused-label -Wunused-variable'
+" None of this works, so just turn off linters for c code.
+" ALE automatically adds -I./include in between, so get the order right
+" let b:ale_c_cc_executable = 'clang -I./arch/generic -Iobj/src/internal -I./src/include -I./src/internal -Iobj/include'
+" let b:ale_c_cc_options = '--target=wasm32 -std=c99 -nostdinc -ffreestanding -frounding-math -Wa,--noexecstack -D_XOPEN_SOURCE=700 -Os -pipe -fomit-frame-pointer -fno-unwind-tables -fno-asynchronous-unwind-tables -ffunction-sections -fdata-sections -w -Wno-pointer-to-int-cast -Werror=implicit-function-declaration -Werror=implicit-int -Werror=pointer-sign -Werror=pointer-arith -Werror=int-conversion -Werror=incompatible-pointer-types -Qunused-arguments -Waddress -Warray-bounds -Wchar-subscripts -Wduplicate-decl-specifier -Winit-self -Wreturn-type -Wsequence-point -Wstrict-aliasing -Wunused-function -Wunused-label -Wunused-variable -pthread'
 
 let b:ale_linters =
       \ {
-      \ 'c' : ['cc'],
+      \ 'c' : [],
       \ }

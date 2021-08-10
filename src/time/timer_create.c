@@ -2,6 +2,7 @@
 #include <setjmp.h>
 #include <limits.h>
 #include "pthread_impl.h"
+#include "syscall.h"
 #include "atomic.h"
 
 struct ksigevent {

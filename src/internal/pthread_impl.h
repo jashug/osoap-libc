@@ -7,10 +7,10 @@
 #include <limits.h>
 #include <sys/mman.h>
 #include "libc.h"
-#include "syscall.h"
 #include "atomic.h"
 #include "futex.h"
 
+#include "osoap_syscall_buffer.h"
 #include "pthread_arch.h"
 
 #define pthread __pthread
@@ -59,6 +59,7 @@ struct pthread {
 	char *dlerror_buf;
 	void *stdio_locks;
         uintptr_t wasm_builtin_dtv[2];
+	struct __osoap_syscall_buffer sys_buf;
 
 	/* Part 3 -- the positions of these fields relative to
 	 * the end of the structure is external and internal ABI. */
@@ -166,18 +167,17 @@ hidden void __unmapself(void *, size_t);
 hidden int __timedwait(volatile int *, int, clockid_t, const struct timespec *, int);
 hidden int __timedwait_cp(volatile int *, int, clockid_t, const struct timespec *, int);
 hidden void __wait(volatile int *, volatile int *, int, int);
+// TODO: Consider removing the priv argument
 static inline void __wake(volatile void *addr, int cnt, int priv)
 {
-	if (priv) priv = FUTEX_PRIVATE;
-	if (cnt<0) cnt = INT_MAX;
-	__syscall(SYS_futex, addr, FUTEX_WAKE|priv, cnt) != -ENOSYS ||
-	__syscall(SYS_futex, addr, FUTEX_WAKE, cnt);
+	// We do not have shared memory between different processes,
+	// so all futexes are private. Thus ignore priv.
+	__builtin_wasm_memory_atomic_notify(addr, cnt);
 }
 static inline void __futexwait(volatile void *addr, int val, int priv)
 {
-	if (priv) priv = FUTEX_PRIVATE;
-	__syscall(SYS_futex, addr, FUTEX_WAIT|priv, val, 0) != -ENOSYS ||
-	__syscall(SYS_futex, addr, FUTEX_WAIT, val, 0);
+	// the -1 for timeout indicates no timeout
+	int ret = __builtin_wasm_memory_atomic_wait32(addr, val, -1);
 }
 
 hidden void __acquire_ptc(void);

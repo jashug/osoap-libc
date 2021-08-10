@@ -1,4 +1,5 @@
 #include "pthread_impl.h"
+#include "syscall.h"
 
 static int pshared_barrier_wait(pthread_barrier_t *b)
 {

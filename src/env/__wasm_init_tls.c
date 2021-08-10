@@ -1,8 +1,15 @@
 #include <stddef.h>
 #include "libc.h"
 #include "pthread_impl.h"
+#include "syscall.h"
 
 extern void __wasm_init_tls(void *mem);
+
+// Returns the thread id
+// Pass in a pointer to write the thread id to on exit
+// (superseeds SYS_set_tid_address)
+__attribute__((import_name("register_syscall_buffer")))
+int __wasm_register_sys_buf(struct __osoap_syscall_buffer *sys_buf, int *loc);
 
 static struct tls_module main_tls;
 
@@ -26,6 +33,7 @@ static void static_wasm_setup_tls()
 
 	// The pthread sits right after the tls
 	pthread_t td = (pthread_t)(mem + main_tls.size);
+	memset(td, 0, sizeof(struct pthread));
 	td->dtv = &td->wasm_builtin_dtv;
 	td->wasm_builtin_dtv[0] = 1;
 	td->wasm_builtin_dtv[1] = (uintptr_t)mem;
@@ -37,7 +45,7 @@ static void static_wasm_setup_tls()
 	td->self = td;
 	libc.can_do_threads = 1;
 	td->detach_state = DT_JOINABLE;
-	td->tid = __syscall(SYS_set_tid_address, &__thread_list_lock);
+	td->tid = __wasm_register_sys_buf(&td->sys_buf, &__thread_list_lock);
 	td->locale = &libc.global_locale;
 	td->robust_list.head = &td->robust_list.head;
 	td->sysinfo = __sysinfo;

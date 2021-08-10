@@ -1,6 +1,7 @@
 #include <time.h>
 #include <limits.h>
 #include "pthread_impl.h"
+#include "syscall.h"
 
 int timer_gettime(timer_t t, struct itimerspec *val)
 {

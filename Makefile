@@ -86,7 +86,7 @@ all:
 
 else
 
-all: $(ALL_LIBS) $(ALL_TOOLS)
+all: $(ALL_LIBS) $(ALL_TOOLS) obj/syscall_buffer_layout.txt
 
 OBJ_DIRS = $(sort $(patsubst %/,%,$(dir $(ALL_LIBS) $(ALL_TOOLS) $(ALL_OBJS) $(GENH) $(GENH_INT))) obj/include)
 
@@ -155,6 +155,9 @@ obj/%.lo: $(srcdir)/%.S
 
 obj/%.lo: $(srcdir)/%.c $(GENH) $(IMPH)
 	$(CC_CMD)
+
+obj/syscall_buffer_layout.txt: arch/wasm32/osoap_syscall_buffer.h
+	echo "#include <osoap_syscall_buffer.h>\nvoid touch(struct __osoap_syscall_buffer *buf) {}\n" | $(CC) $(CFLAGS_ALL) -x c -c -Xclang -fdump-record-layouts - >$@
 
 lib/libc.so: $(LOBJS) $(LDSO_OBJS)
 	$(CC) $(CFLAGS_ALL) $(LDFLAGS_ALL) -nostdlib -shared \

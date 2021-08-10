@@ -3,6 +3,7 @@
 #include <unistd.h>
 #include <string.h>
 #include "pthread_impl.h"
+#include "syscall.h"
 
 struct lio_state {
 	struct sigevent *sev;
