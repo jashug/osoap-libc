@@ -95,6 +95,10 @@ $(ALL_LIBS) $(ALL_TOOLS) $(ALL_OBJS) $(ALL_OBJS:%.o=%.lo) $(GENH) $(GENH_INT): |
 $(OBJ_DIRS):
 	mkdir -p $@
 
+CFLAGS_DUMP_LAYOUT := $(CFLAGS_ALL)
+CFLAGS_ALL += -MMD
+-include $(OBJS:%.o=%.d)
+
 obj/include/bits/alltypes.h: $(srcdir)/arch/$(ARCH)/bits/alltypes.h.in $(srcdir)/include/alltypes.h.in $(srcdir)/tools/mkalltypes.sed
 	sed -f $(srcdir)/tools/mkalltypes.sed $(srcdir)/arch/$(ARCH)/bits/alltypes.h.in $(srcdir)/include/alltypes.h.in > $@
 
@@ -157,7 +161,7 @@ obj/%.lo: $(srcdir)/%.c $(GENH) $(IMPH)
 	$(CC_CMD)
 
 obj/syscall_buffer_layout.txt: arch/wasm32/osoap_syscall_buffer.h
-	echo "#include <osoap_syscall_buffer.h>\nvoid touch(struct __osoap_syscall_buffer *buf) {}\n" | $(CC) $(CFLAGS_ALL) -x c -c -Xclang -fdump-record-layouts - >$@
+	echo "#include <osoap_syscall_buffer.h>\nvoid touch(struct __osoap_syscall_buffer *buf) {}\n" | $(CC) $(CFLAGS_DUMP_LAYOUT) -x c -c -Xclang -fdump-record-layouts -o /dev/null - >$@
 
 lib/libc.so: $(LOBJS) $(LDSO_OBJS)
 	$(CC) $(CFLAGS_ALL) $(LDFLAGS_ALL) -nostdlib -shared \

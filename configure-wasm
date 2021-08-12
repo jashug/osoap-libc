@@ -5,6 +5,6 @@
   --target=wasm32 \
   --enable-wrapper=no \
   --disable-shared \
-  CC="clang --target=wasm32" \
-  CFLAGS="-pthread" \
+  CC="clang" \
+  CFLAGS="--target=wasm32 -pthread" \
   CROSS_COMPILE=llvm-

@@ -17,6 +17,7 @@ struct __osoap_syscall_buffer {
 		struct {
 			long n;
 			long args[7];
+			uint32_t cnt;
 		} linux_syscall;
 		long linux_syscall_return;
 	} u;
