@@ -4,15 +4,17 @@
 #include <stdint.h>
 
 #define __OSOAP_SYS_TURN_USER 0
-#define __OSOAP_SYS_TURN_KERNAL 1
+#define __OSOAP_SYS_TURN_KERNEL 1
+#define __OSOAP_SYS_FLAG_SIGNAL 0x1
+#define __OSOAP_SYS_FLAG_DEBUGGER 0x2
 #define __OSOAP_SYS_TAGW_linux_syscall 1
-#define __OSOAP_SYS_TAGR_debugger 2
-#define __OSOAP_SYS_TAGR_signal 3
-#define __OSOAP_SYS_TAGR_linux_syscall_return 4
+#define __OSOAP_SYS_TAGR_linux_syscall_return 2
 
 struct __osoap_syscall_buffer {
 	int32_t sync_state;
+	uint32_t flag_word;
 	uint32_t tag;
+	uint32_t padding;
 	union {
 		struct {
 			long n;
@@ -22,5 +24,8 @@ struct __osoap_syscall_buffer {
 		long linux_syscall_return;
 	} u;
 };
+
+void __osoap_process_syscall_flags(struct __osoap_syscall_buffer *sys_buf);
+void __osoap_send_syscall(struct __osoap_syscall_buffer *sys_buf);
 
 #endif
