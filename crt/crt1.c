@@ -1,7 +1,7 @@
 extern void __wasm_setup_tls();
 extern void __wasm_call_ctors(void);
-extern void exit(int);
-extern int main(void);
+void exit(int);
+int main(void);
 
 __attribute__((export_name("_start")))
 void _start(void)
