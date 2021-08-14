@@ -1,5 +1,4 @@
 #include <stdint.h>
-#include "atomic.h"
 #include "osoap_syscall_buffer.h"
 
 __attribute__((import_module("diagnostic"), import_name("debugger")))
@@ -9,7 +8,7 @@ void __wasm_debugger();
 void __osoap_send_syscall(struct __osoap_syscall_buffer *sys_buf) {
 	int32_t *sync_state = &sys_buf->sync_state;
 	// Transfer control to the kernel
-	a_store(sync_state, __OSOAP_SYS_TURN_KERNEL);
+	__atomic_store_n(sync_state, __OSOAP_SYS_TURN_KERNEL, __ATOMIC_SEQ_CST);
 	__builtin_wasm_memory_atomic_notify(sync_state, 1);
 	// Wait for kernel to reply
 	__builtin_wasm_memory_atomic_wait32(sync_state, __OSOAP_SYS_TURN_KERNEL, -1);
@@ -20,7 +19,7 @@ void __osoap_send_syscall(struct __osoap_syscall_buffer *sys_buf) {
 void __osoap_process_syscall_flags(struct __osoap_syscall_buffer *sys_buf) {
 	uint32_t *flag_word = &sys_buf->flag_word;
 	uint32_t flags;
-	while ((flags = a_load(flag_word)) & __OSOAP_SYS_FLAG_SIGNAL) {
+	while ((flags = __atomic_load_n(flag_word, __ATOMIC_SEQ_CST)) & __OSOAP_SYS_FLAG_SIGNAL) {
 		// TODO: handle signals
 		// This will look something like:
 		// osoap_sig_descr signal = __syscall(SYS_poll_signal);
@@ -40,6 +39,6 @@ void __osoap_process_syscall_flags(struct __osoap_syscall_buffer *sys_buf) {
 		// We may lose calls to the debugger if they get stacked up,
 		// but that should be OK.
 		__wasm_debugger();
-		a_and(flag_word, ~__OSOAP_SYS_FLAG_DEBUGGER);
+		__atomic_fetch_and(flag_word, ~__OSOAP_SYS_FLAG_DEBUGGER, __ATOMIC_SEQ_CST);
 	}
 }
