@@ -7,8 +7,11 @@
 #define __OSOAP_SYS_TURN_KERNEL 1
 #define __OSOAP_SYS_FLAG_SIGNAL 0x1
 #define __OSOAP_SYS_FLAG_DEBUGGER 0x2
+#define __OSOAP_SYS_FLAG_DIE 0x4
 #define __OSOAP_SYS_TAGW_linux_syscall 1
 #define __OSOAP_SYS_TAGR_linux_syscall_return 2
+#define __OSOAP_SYS_TAGW_detach 3
+#define __OSOAP_SYS_TAGR_unknown_syscall 4
 
 struct __osoap_syscall_buffer {
 	int32_t sync_state;
@@ -22,6 +25,7 @@ struct __osoap_syscall_buffer {
 			uint32_t cnt;
 		} linux_syscall;
 		long linux_syscall_return;
+		int detach_exit_code;
 	} u;
 };
 
