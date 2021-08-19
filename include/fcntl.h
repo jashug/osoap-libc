@@ -41,9 +41,9 @@ int posix_fallocate(int, off_t, off_t);
 #define O_TTY_INIT 0
 
 #define O_ACCMODE (03|O_SEARCH)
-#define O_RDONLY  00
-#define O_WRONLY  01
-#define O_RDWR    02
+#define O_RDONLY  01
+#define O_WRONLY  02
+#define O_RDWR    03
 
 #define F_OFD_GETLK 36
 #define F_OFD_SETLK 37
