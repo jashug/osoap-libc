@@ -1,18 +1,9 @@
 #include <stdint.h>
+#include <stdlib.h>
 #include "pthread_impl.h"
 #include "osoap_syscall.h"
 
-// Invariant: sys_buf->sync_state == __OSOAP_SYS_TURN_USER outside this function
-void __osoap_send_syscall(struct __osoap_syscall_buffer *sys_buf) {
-	int32_t *sync_state = &sys_buf->sync_state;
-	// Transfer control to the kernel
-	__atomic_store_n(sync_state, __OSOAP_SYS_TURN_KERNEL, __ATOMIC_SEQ_CST);
-	__builtin_wasm_memory_atomic_notify(sync_state, 1);
-	// Wait for kernel to reply
-	__builtin_wasm_memory_atomic_wait32(sync_state, __OSOAP_SYS_TURN_KERNEL, -1);
-}
-
-static uint32_t atomic_load_flags(uint32_t *flag_word) {
+static uint32_t __osoap_syscall_load_flags(uint32_t *flag_word) {
 	uint32_t flags = __atomic_load_n(flag_word, __ATOMIC_SEQ_CST);
 	if (flags & __OSOAP_SYS_FLAG_DEBUGGER) {
 		// When the FLAG_DEBUGGER bit gets set, call the debugger,
@@ -22,38 +13,108 @@ static uint32_t atomic_load_flags(uint32_t *flag_word) {
 		__wasm_debugger();
 		__atomic_fetch_and(flag_word, ~__OSOAP_SYS_FLAG_DEBUGGER, __ATOMIC_SEQ_CST);
 	}
-	if (flags & __OSOAP_SYS_FLAG_DIE) {
-		__wasm_throw_exit();
+	if (flags & __OSOAP_SYS_FLAG_EXIT) {
+		exit(0);
 	}
 	return flags;
 }
 
-// This function may clobber the syscall_buffer, so you should save
-// the return value of previous syscalls before calling this function.
-void __osoap_process_syscall_flags(struct __osoap_syscall_buffer *sys_buf) {
-	uint32_t *flag_word = &sys_buf->flag_word;
-	while (atomic_load_flags(flag_word) & __OSOAP_SYS_FLAG_SIGNAL) {
-		// TODO: handle signals
-		// This will look something like:
-		// osoap_sig_descr signal = __syscall(SYS_poll_signal);
-		// execute signal
-		//
-		// (The SYS_poll_signal returns one pending signal, and sets
-		//  the FLAG_SIGNAL bit based on whether there are more signals
-		//  after the returned one)
-		// The FLAG_SIGNAL bit can also be set atomically any time by
-		// the kernal, so if the signal handler makes system calls that
-		// result in another signal being generated, we can stay in this
-		// loop.
+// Invariant: sys_buf->sync_state == __OSOAP_SYS_TURN_USER outside this function
+uint32_t __osoap_send_syscall(struct __osoap_syscall_buffer *sys_buf) {
+	int32_t *sync_state = &sys_buf->sync_state;
+	// Transfer control to the kernel
+	int32_t current_state = __OSOAP_SYS_TURN_USER;
+	bool success = __atomic_compare_exchange_n(sync_state, &current_state, __OSOAP_SYS_TURN_KERNEL, false /* no spurrious failures */, __ATOMIC_SEQ_CST, __ATOMIC_SEQ_CST);
+	if (success) {
+		// The sync_state was __OSOAP_SYS_TURN_USER, we have changed
+		// it to __OSOAP_SYS_TURN_KERNEL, so wake up the kernel.
+		__builtin_wasm_memory_atomic_notify(sync_state, 1);
+		// Wait for kernel to reply
+		__builtin_wasm_memory_atomic_wait32(sync_state, __OSOAP_SYS_TURN_KERNEL, -1);
+		current_state = __atomic_load_n(sync_state, __ATOMIC_SEQ_CST);
+	}
+	if (current_state == __OSOAP_SYS_TURN_DETACHED) {
+		// The kernel is no longer listening to this syscall buffer,
+		// and requesting that we exit immediately.
+		// It could also be __OSOAP_SYS_TURN_KERNEL, but that would
+		// be a bug on our side; we should always be sleeping when
+		// sync_state is __OSOAP_SYS_TURN_KERNEL.
+		__wasm_throw_exit();
+	} else if (current_state == __OSOAP_SYS_TURN_KERNEL) {
+		// Something has gone wrong; we should only be woken up when
+		// the sync_state is changed away from TURN_KERNEL.
+		// I don't think that spurrious wakes are a possibility here.
+		// Check if any uses of atomic_notify can get called on freed
+		// memory that might have been reused for a syscall buffer.
+		__wasm_debugger();
+		__wasm_throw_exit();
+	}
+	return __osoap_syscall_load_flags(&sys_buf->flag_word);
+}
+
+// consider a version tuned for multi-value, where we return both
+// flags and the continuation flag.
+bool __osoap_send_syscall_restartable(struct __osoap_syscall_buffer *sys_buf, uint32_t *flags) {
+	*flags = __osoap_send_syscall(sys_buf);
+	if (sys_buf->tag == __OSOAP_SYS_TAGR_signal_then_retry) {
+		__osoap_execute_signal(sys_buf);
+		return true;
+	} else {
+		return false;
 	}
 }
 
-_Noreturn void __osoap_detach(int ec) {
+/* Template for a restartable syscall.
+ * return_type __osoap_syscall_name(parameters) {
+ *   struct __osoap_syscall_buffer *sys_buf = &pthread_self()->sys_buf;
+ *   uint32_t flags;
+ *   do {
+ *     // Set up sys_buf
+ *     sys_buf->tag = __OSOAP_SYS_TAGW_tag_name;
+ *     sys_buf->u.syscall_name.arguments = parameters;
+ *   } while (__osoap_send_syscall_restartable(sys_buf, &flags));
+ *   return_type return_value = sys_buf->u.syscall_return.value;
+ *   if (flags & __OSOAP_SYS_FLAG_SIGNAL) {
+ *     __osoap_poll_signals();
+ *   }
+ *   return return_value;
+ * }
+ *
+ * For non-restartable syscalls, this can (but does not need to be) simplified.
+ * return_type __osoap_syscall_name(parameters) {
+ *   struct __osoap_syscall_buffer *sys_buf = &pthread_self()->sys_buf;
+ *   // Set up sys_buf
+ *   sys_buf->tag = __OSOAP_SYS_TAGW_tag_name;
+ *   sys_buf->us.syscall_name.arguments = parameters;
+ *   uint32_t flags = __osoap_send_syscall(sys_buf);
+ *   return_type return_value = sys_buf->u.syscall_return.value;
+ *   if (flags & __OSOAP_SYS_FLAG_SIGNAL) {
+ *     __osoap_poll_signals();
+ *   }
+ *   return return_value;
+ * }
+ */
+
+void __osoap_poll_signals() {
+	struct __osoap_syscall_buffer *sys_buf = &pthread_self()->sys_buf;
+	uint32_t flags;
+	do {
+		sys_buf->tag = __OSOAP_SYS_TAGW_poll_signals;
+	} while (__osoap_send_syscall_restartable(sys_buf, &flags));
+}
+
+void __osoap_maybe_poll_signals() {
+	struct __osoap_syscall_buffer *sys_buf = &pthread_self()->sys_buf;
+	if (__osoap_syscall_load_flags(&sys_buf->flag_word)) {
+		__osoap_poll_signals();
+	}
+}
+
+void __osoap_detach(int ec) {
 	struct __osoap_syscall_buffer *sys_buf = &pthread_self()->sys_buf;
 	sys_buf->tag = __OSOAP_SYS_TAGW_detach;
 	sys_buf->u.detach_exit_code = ec;
 	__osoap_send_syscall(sys_buf);
-	__osoap_process_syscall_flags(sys_buf);
 	// Should always throw_exit while processing flags, but just in case.
 	__wasm_throw_exit();
 }

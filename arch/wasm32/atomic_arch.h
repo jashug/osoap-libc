@@ -48,6 +48,12 @@ static inline void a_store(volatile int *p, int x)
 	__atomic_store_n(p, x, __ATOMIC_SEQ_CST);
 }
 
+#define a_barrier a_barrier
+static inline void a_barrier()
+{
+	__atomic_thread_fence(__ATOMIC_SEQ_CST);
+}
+
 #define a_crash a_crash
 static inline void a_crash()
 {

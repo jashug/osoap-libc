@@ -44,7 +44,7 @@ LIBCC = -lgcc
 CPPFLAGS =
 CFLAGS =
 CFLAGS_AUTO = -Os -pipe
-CFLAGS_C99FSE = -std=c99 -ffreestanding -nostdinc 
+CFLAGS_C99FSE = -std=c99 -ffreestanding -nostdinc
 
 CFLAGS_ALL = $(CFLAGS_C99FSE)
 CFLAGS_ALL += -D_XOPEN_SOURCE=700 -I$(srcdir)/arch/$(ARCH) -I$(srcdir)/arch/generic -Iobj/src/internal -I$(srcdir)/src/include -I$(srcdir)/src/internal -Iobj/include -I$(srcdir)/include
@@ -69,6 +69,7 @@ SHARED_LIBS = lib/libc.so
 TOOL_LIBS = lib/musl-gcc.specs
 ALL_LIBS = $(CRT_LIBS) $(STATIC_LIBS) $(SHARED_LIBS) $(EMPTY_LIBS) $(TOOL_LIBS)
 ALL_TOOLS = obj/musl-gcc
+ALL_DIAGNOSTIC_OBJS = obj/syscall_buffer_layout.txt obj/predefined_symbols.txt
 
 WRAPCC_GCC = gcc
 WRAPCC_CLANG = clang
@@ -86,7 +87,7 @@ all:
 
 else
 
-all: $(ALL_LIBS) $(ALL_TOOLS) obj/syscall_buffer_layout.txt
+all: $(ALL_LIBS) $(ALL_TOOLS) $(ALL_DIAGNOSTIC_OBJS)
 
 OBJ_DIRS = $(sort $(patsubst %/,%,$(dir $(ALL_LIBS) $(ALL_TOOLS) $(ALL_OBJS) $(GENH) $(GENH_INT))) obj/include)
 
@@ -95,9 +96,9 @@ $(ALL_LIBS) $(ALL_TOOLS) $(ALL_OBJS) $(ALL_OBJS:%.o=%.lo) $(GENH) $(GENH_INT): |
 $(OBJ_DIRS):
 	mkdir -p $@
 
-CFLAGS_DUMP_LAYOUT := $(CFLAGS_ALL)
+CFLAGS_NO_DEPS := $(CFLAGS_ALL)
 CFLAGS_ALL += -MMD
--include $(OBJS:%.o=%.d)
+-include $(ALL_OBJS:%.o=%.d)
 
 obj/include/bits/alltypes.h: $(srcdir)/arch/$(ARCH)/bits/alltypes.h.in $(srcdir)/include/alltypes.h.in $(srcdir)/tools/mkalltypes.sed
 	sed -f $(srcdir)/tools/mkalltypes.sed $(srcdir)/arch/$(ARCH)/bits/alltypes.h.in $(srcdir)/include/alltypes.h.in > $@
@@ -161,7 +162,10 @@ obj/%.lo: $(srcdir)/%.c $(GENH) $(IMPH)
 	$(CC_CMD)
 
 obj/syscall_buffer_layout.txt: arch/wasm32/osoap_syscall_buffer.h
-	echo "#include <osoap_syscall_buffer.h>\nvoid touch(struct __osoap_syscall_buffer *buf) {}\n" | $(CC) $(CFLAGS_DUMP_LAYOUT) -x c -c -Xclang -fdump-record-layouts -o /dev/null - >$@
+	echo "#include <osoap_syscall_buffer.h>\nvoid touch(struct __osoap_syscall_buffer *buf) {}\n" | $(CC) $(CFLAGS_NO_DEPS) -x c -c -Xclang -fdump-record-layouts -o /dev/null - >$@
+
+obj/predefined_symbols.txt: Makefile config.mak
+	$(CC) $(CFLAGS_NO_DEPS) -dM -E -o $@ - </dev/null
 
 lib/libc.so: $(LOBJS) $(LDSO_OBJS)
 	$(CC) $(CFLAGS_ALL) $(LDFLAGS_ALL) -nostdlib -shared \
