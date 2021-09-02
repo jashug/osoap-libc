@@ -1,6 +1,6 @@
 #include <stdint.h>
 #include "pthread_impl.h"
-#include "osoap_syscall_buffer.h"
+#include "osoap_syscall.h"
 
 #define __SYSCALL_LL_E(x) (x)
 #define __SYSCALL_LL_O(x) (x)

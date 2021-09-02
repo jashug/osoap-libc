@@ -11,6 +11,7 @@ _Noreturn void __wasm_throw_exit(void);
 
 void __osoap_poll_signals(void);
 void __osoap_maybe_poll_signals(void);
-_Noreturn void __osoap_detach(int);
+_Noreturn void __osoap_exit_process(int);
+_Noreturn void __osoap_exit_thread(void);
 
 #endif

@@ -13,6 +13,7 @@ static uint32_t __osoap_syscall_load_flags(uint32_t *flag_word) {
 		__wasm_debugger();
 		__atomic_fetch_and(flag_word, ~__OSOAP_SYS_FLAG_DEBUGGER, __ATOMIC_SEQ_CST);
 	}
+	// TODO: This should be removable
 	if (flags & __OSOAP_SYS_FLAG_EXIT) {
 		exit(0);
 	}
@@ -50,6 +51,10 @@ uint32_t __osoap_send_syscall(struct __osoap_syscall_buffer *sys_buf) {
 		__wasm_throw_exit();
 	}
 	return __osoap_syscall_load_flags(&sys_buf->flag_word);
+}
+
+// TODO: stub
+static void __osoap_execute_signal(struct __osoap_syscall_buffer *sys_buf) {
 }
 
 // consider a version tuned for multi-value, where we return both
@@ -110,11 +115,21 @@ void __osoap_maybe_poll_signals() {
 	}
 }
 
-void __osoap_detach(int ec) {
+void __osoap_exit_process(int ec) {
 	struct __osoap_syscall_buffer *sys_buf = &pthread_self()->sys_buf;
-	sys_buf->tag = __OSOAP_SYS_TAGW_detach;
-	sys_buf->u.detach_exit_code = ec;
+	sys_buf->tag = __OSOAP_SYS_TAGW_exit_process;
+	sys_buf->u.exit_process_code = ec;
 	__osoap_send_syscall(sys_buf);
-	// Should always throw_exit while processing flags, but just in case.
+	// Should always throw_exit before we return from the syscall,
+	// but just in case.
+	__wasm_throw_exit();
+}
+
+void __osoap_exit_thread() {
+	struct __osoap_syscall_buffer *sys_buf = &pthread_self()->sys_buf;
+	sys_buf->tag = __OSOAP_SYS_TAGW_exit_thread;
+	__osoap_send_syscall(sys_buf);
+	// Should always throw_exit before we return from the syscall,
+	// but just in case.
 	__wasm_throw_exit();
 }

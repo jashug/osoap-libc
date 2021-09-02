@@ -3,5 +3,5 @@
 
 _Noreturn void _Exit(int ec)
 {
-	__osoap_detach(ec);
+	__osoap_exit_process(ec);
 }
