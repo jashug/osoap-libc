@@ -4,6 +4,9 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#define __NEED_size_t
+#include <bits/alltypes.h>
+
 #define __OSOAP_SYS_TURN_USER 0
 #define __OSOAP_SYS_TURN_KERNEL 1
 #define __OSOAP_SYS_TURN_DETACHED 2
@@ -17,6 +20,13 @@
 #define __OSOAP_SYS_TAGW_poll_signals 5
 #define __OSOAP_SYS_TAGR_signal_then_retry 6
 #define __OSOAP_SYS_TAGW_exit_thread 7
+
+struct __osoap_pathname {
+	int rootfd;
+	int curfd; // Ignored if path is absolute
+	size_t pathlen;
+	char *path;
+};
 
 struct __osoap_syscall_buffer {
 	int32_t sync_state;
@@ -36,5 +46,13 @@ struct __osoap_syscall_buffer {
 
 uint32_t __osoap_send_syscall(struct __osoap_syscall_buffer *);
 bool __osoap_send_syscall_restartable(struct __osoap_syscall_buffer *, uint32_t *);
+void __osoap_process_signals_after_syscall(struct __osoap_syscall_buffer *, uint32_t *);
+void __osoap_poll_signals(void);
+
+__attribute__((import_module("diagnostic"), import_name("debugger")))
+void __wasm_debugger(void);
+
+__attribute__((import_name("throw_exit")))
+_Noreturn void __wasm_throw_exit(void);
 
 #endif

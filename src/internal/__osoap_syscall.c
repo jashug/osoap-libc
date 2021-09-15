@@ -79,9 +79,7 @@ bool __osoap_send_syscall_restartable(struct __osoap_syscall_buffer *sys_buf, ui
  *     sys_buf->u.syscall_name.arguments = parameters;
  *   } while (__osoap_send_syscall_restartable(sys_buf, &flags));
  *   return_type return_value = sys_buf->u.syscall_return.value;
- *   if (flags & __OSOAP_SYS_FLAG_SIGNAL) {
- *     __osoap_poll_signals();
- *   }
+ *   __osoap_process_signals_after_syscall(sys_buf, &flags);
  *   return return_value;
  * }
  *
@@ -93,43 +91,22 @@ bool __osoap_send_syscall_restartable(struct __osoap_syscall_buffer *sys_buf, ui
  *   sys_buf->us.syscall_name.arguments = parameters;
  *   uint32_t flags = __osoap_send_syscall(sys_buf);
  *   return_type return_value = sys_buf->u.syscall_return.value;
- *   if (flags & __OSOAP_SYS_FLAG_SIGNAL) {
- *     __osoap_poll_signals();
- *   }
+ *   __osoap_process_signals_after_syscall(sys_buf, &flags);
  *   return return_value;
  * }
  */
 
-void __osoap_poll_signals() {
-	struct __osoap_syscall_buffer *sys_buf = &pthread_self()->sys_buf;
-	uint32_t flags;
-	do {
-		sys_buf->tag = __OSOAP_SYS_TAGW_poll_signals;
-	} while (__osoap_send_syscall_restartable(sys_buf, &flags));
-}
-
-void __osoap_maybe_poll_signals() {
-	struct __osoap_syscall_buffer *sys_buf = &pthread_self()->sys_buf;
-	if (__osoap_syscall_load_flags(&sys_buf->flag_word)) {
-		__osoap_poll_signals();
+void __osoap_process_signals_after_syscall(struct __osoap_syscall_buffer *sys_buf, uint32_t *flags) {
+	if (*flags & __OSOAP_SYS_FLAG_SIGNAL) {
+		do {
+			sys_buf->tag = __OSOAP_SYS_TAGW_poll_signals;
+		} while (__osoap_send_syscall_restartable(sys_buf, flags));
 	}
 }
 
-void __osoap_exit_process(int ec) {
+void __osoap_poll_signals()
+{
 	struct __osoap_syscall_buffer *sys_buf = &pthread_self()->sys_buf;
-	sys_buf->tag = __OSOAP_SYS_TAGW_exit_process;
-	sys_buf->u.exit_process_code = ec;
-	__osoap_send_syscall(sys_buf);
-	// Should always throw_exit before we return from the syscall,
-	// but just in case.
-	__wasm_throw_exit();
-}
-
-void __osoap_exit_thread() {
-	struct __osoap_syscall_buffer *sys_buf = &pthread_self()->sys_buf;
-	sys_buf->tag = __OSOAP_SYS_TAGW_exit_thread;
-	__osoap_send_syscall(sys_buf);
-	// Should always throw_exit before we return from the syscall,
-	// but just in case.
-	__wasm_throw_exit();
+	uint32_t flags = __osoap_syscall_load_flags(&sys_buf->flag_word);
+	__osoap_process_signals_after_syscall(sys_buf, &flags);
 }
