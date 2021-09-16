@@ -9,6 +9,8 @@
 static void dummy(int x) { }
 weak_alias(dummy, __aio_atfork);
 
+int stack_buffer[1024 >> 2]; // TODO: make this customizable
+
 pid_t _Fork(void)
 {
 	pid_t ret;
@@ -16,14 +18,14 @@ pid_t _Fork(void)
 	__block_all_sigs(&set);
 	__aio_atfork(-1);
 	LOCK(__abort_lock);
-#ifdef SYS_fork
-	ret = __syscall(SYS_fork);
-#else
-	ret = __syscall(SYS_clone, SIGCHLD, 0);
-#endif
+	struct __asyncify_stack stack_buf;
+	stack_buf.start = (void *)&stack_buffer;
+	stack_buf.end = ((void *)&stack_buffer) + sizeof(stack_buffer);
+	ret = __syscall_ret(__osoap_fork(&__pthread_self()->sys_buf, &stack_buf));
+	__osoap_poll_signals();
 	if (!ret) {
 		pthread_t self = __pthread_self();
-		self->tid = __syscall(SYS_gettid);
+		self->tid = __osoap_gettid();
 		self->robust_list.off = 0;
 		self->robust_list.pending = 0;
 		self->next = self->prev = self;
