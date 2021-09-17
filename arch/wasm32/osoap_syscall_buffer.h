@@ -10,7 +10,6 @@
 #define __OSOAP_SYS_TURN_DETACHED 2
 #define __OSOAP_SYS_FLAG_SIGNAL 0x1
 #define __OSOAP_SYS_FLAG_DEBUGGER 0x2
-#define __OSOAP_SYS_FLAG_EXIT 0x4
 #define __OSOAP_SYS_TAGW_linux_syscall 1
 #define __OSOAP_SYS_TAGR_linux_syscall_return 2
 #define __OSOAP_SYS_TAGW_poll_signals 3

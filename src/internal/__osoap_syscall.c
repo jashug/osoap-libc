@@ -13,10 +13,6 @@ static uint32_t __osoap_syscall_load_flags(uint32_t *flag_word) {
 		__wasm_debugger();
 		__atomic_fetch_and(flag_word, ~__OSOAP_SYS_FLAG_DEBUGGER, __ATOMIC_SEQ_CST);
 	}
-	// TODO: This should be removable
-	if (flags & __OSOAP_SYS_FLAG_EXIT) {
-		exit(0);
-	}
 	return flags;
 }
 
