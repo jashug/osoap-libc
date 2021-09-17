@@ -81,6 +81,7 @@ unsigned alarm(unsigned);
 unsigned sleep(unsigned);
 int pause(void);
 
+void __osoap_set_fork_stack_size(size_t);
 pid_t fork(void);
 pid_t _Fork(void);
 int execve(const char *, char *const [], char *const []);
