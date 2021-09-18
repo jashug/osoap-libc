@@ -19,7 +19,6 @@ volatile int __eintr_valid_flag;
 
 int __libc_sigaction(int sig, const struct sigaction *restrict sa, struct sigaction *restrict old)
 {
-	struct k_sigaction ksa, ksa_old;
 	if (sa) {
 		if ((uintptr_t)sa->sa_handler > 1UL) {
 			a_or_l(handler_set+(sig-1)/(8*sizeof(long)),
@@ -43,16 +42,8 @@ int __libc_sigaction(int sig, const struct sigaction *restrict sa, struct sigact
 				a_store(&__eintr_valid_flag, 1);
 			}
 		}
-		ksa.handler = sa->sa_handler;
-		ksa.flags = sa->sa_flags | SA_RESTORER;
-		memcpy(&ksa.mask, &sa->sa_mask, _NSIG/8);
 	}
-	int r = __syscall(SYS_rt_sigaction, sig, sa?&ksa:0, old?&ksa_old:0, _NSIG/8);
-	if (old && !r) {
-		old->sa_handler = ksa_old.handler;
-		old->sa_flags = ksa_old.flags;
-		memcpy(&old->sa_mask, &ksa_old.mask, _NSIG/8);
-	}
+	int r = __syscall(SYS_rt_sigaction, sig, sa, old, _NSIG/8);
 	return __syscall_ret(r);
 }
 
