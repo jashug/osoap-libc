@@ -173,7 +173,6 @@ struct sigaction {
 	} __sa_handler;
 	sigset_t sa_mask;
 	int sa_flags;
-	void (*sa_restorer)(void);
 };
 #define sa_handler   __sa_handler.sa_handler
 #define sa_sigaction __sa_handler.sa_sigaction
