@@ -30,6 +30,7 @@ static void static_wasm_setup_tls()
 
 	// This requires malloc to work before thread pointer is set up
 	void *mem = aligned_alloc(libc.tls_align, libc.tls_size);
+	if (!mem) __builtin_trap();
 
 	// The pthread sits right after the tls
 	pthread_t td = (pthread_t)(mem + main_tls.size);
