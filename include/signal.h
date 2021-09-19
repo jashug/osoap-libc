@@ -171,8 +171,8 @@ struct sigaction {
 		void (*sa_handler)(int);
 		void (*sa_sigaction)(int, siginfo_t *, void *);
 	} __sa_handler;
-	sigset_t sa_mask;
 	int sa_flags;
+	sigset_t sa_mask;
 };
 #define sa_handler   __sa_handler.sa_handler
 #define sa_sigaction __sa_handler.sa_sigaction
@@ -273,9 +273,9 @@ int sigandset(sigset_t *, const sigset_t *, const sigset_t *);
 #define SA_ONESHOT SA_RESETHAND
 #endif
 
-#define SIG_ERR  ((void (*)(int))-1)
+#define SIG_ERR  ((void (*)(int))-2)
 #define SIG_DFL  ((void (*)(int)) 0)
-#define SIG_IGN  ((void (*)(int)) 1)
+#define SIG_IGN  ((void (*)(int))-1)
 
 typedef int sig_atomic_t;
 
