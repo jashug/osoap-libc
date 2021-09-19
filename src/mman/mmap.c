@@ -23,7 +23,9 @@ void *__mmap(void *start, size_t len, int prot, int flags, int fd, off_t off)
 		return MAP_FAILED;
 	}
 	if (flags == MAP_PRIVATE|MAP_ANON) {
-		size_t ret = __builtin_wasm_memory_grow(0, len + ((-len) & (PAGESIZE-1)));
+		size_t len_rounded_up = len + ((-len) & (PAGESIZE-1));
+		size_t pages_to_add = len_rounded_up / PAGESIZE;
+		size_t ret = __builtin_wasm_memory_grow(0, pages_to_add);
 		if (ret == -1) {
 			errno = ENOMEM;
 			return MAP_FAILED;

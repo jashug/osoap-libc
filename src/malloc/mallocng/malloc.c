@@ -55,12 +55,13 @@ struct meta *alloc_meta(void)
 	if ((m = dequeue_head(&ctx.free_meta_head))) return m;
 	if (!ctx.avail_meta_count) {
 		if (!ctx.avail_meta_area_count) {
-			ctx.brk = __builtin_wasm_memory_grow(0, pagesize / PAGESIZE);
-			if (ctx.brk == -1) return 0;
-			ctx.brk *= PAGESIZE;
-			ctx.avail_meta_areas = (void *)ctx.brk;
-			ctx.brk += pagesize;
-			ctx.avail_meta_area_count = pagesize >> 12;
+			size_t n = 2UL << ctx.meta_alloc_shift;
+			p = mmap(0, n*pagesize, PROT_NONE,
+				MAP_PRIVATE|MAP_ANON, -1, 0);
+			if (p==MAP_FAILED) return 0;
+			ctx.avail_meta_areas = p + pagesize;
+			ctx.avail_meta_area_count = (n-1)*(pagesize>>12);
+			ctx.meta_alloc_shift++;
 		}
 		p = ctx.avail_meta_areas;
 		ctx.avail_meta_area_count--;
