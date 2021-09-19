@@ -37,8 +37,6 @@ struct __libc {
 extern hidden struct __libc __libc;
 #define libc __libc
 
-hidden size_t __wasm_tls_align();
-hidden size_t __wasm_aligned_tls_size();
 hidden void __wasm_setup_tls();
 
 hidden void __init_libc(char **, char *);

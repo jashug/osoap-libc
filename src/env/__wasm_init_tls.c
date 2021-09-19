@@ -13,12 +13,14 @@ int __wasm_register_sys_buf(struct __osoap_syscall_buffer *sys_buf, int *loc);
 
 static struct tls_module main_tls;
 
+__thread struct pthread local_pthread;
+
 static void static_wasm_setup_tls()
 {
 	main_tls.image = NULL; /* unused */
 	// We don't have an uninitialized section
-	main_tls.len = main_tls.size = __wasm_aligned_tls_size();
-	main_tls.align = __wasm_tls_align();
+	main_tls.len = main_tls.size = __builtin_wasm_tls_size();
+	main_tls.align = __builtin_wasm_tls_align();
 	// From the thread pointer, go back this much
 	main_tls.offset = main_tls.size;
 
@@ -26,23 +28,21 @@ static void static_wasm_setup_tls()
 	libc.tls_head = &main_tls;
 	libc.tls_align = main_tls.align;
 	// Does this need to be padded? I don't think so.
-	libc.tls_size = main_tls.size + sizeof(struct pthread);
+	libc.tls_size = main_tls.size;
 
 	// This requires malloc to work before thread pointer is set up
 	void *mem = aligned_alloc(libc.tls_align, libc.tls_size);
 	if (!mem) __builtin_trap();
 
-	// The pthread sits right after the tls
-	pthread_t td = (pthread_t)(mem + main_tls.size);
+	if (!__builtin_wasm_tls_size()) __builtin_trap();
+	__wasm_init_tls(mem);
+
+	// Set up td
+	pthread_t td = &local_pthread;
 	memset(td, 0, sizeof(struct pthread));
 	td->dtv = &td->wasm_builtin_dtv;
 	td->wasm_builtin_dtv[0] = 1;
 	td->wasm_builtin_dtv[1] = (uintptr_t)mem;
-	if (__builtin_wasm_tls_size()) {
-		__wasm_init_tls(mem);
-	}
-
-	// Set up td
 	td->self = td;
 	libc.can_do_threads = 1;
 	td->detach_state = DT_JOINABLE;

@@ -11,7 +11,6 @@
 #include "futex.h"
 
 #include "osoap_syscall_buffer.h"
-#include "pthread_arch.h"
 
 #define pthread __pthread
 
@@ -68,6 +67,10 @@ struct pthread {
 	uintptr_t *dtv;
 #endif
 };
+
+extern hidden __thread struct pthread local_pthread;
+
+#include "pthread_arch.h"
 
 enum {
 	DT_EXITED = 0,
