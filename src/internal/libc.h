@@ -38,6 +38,7 @@ extern hidden struct __libc __libc;
 #define libc __libc
 
 hidden void __wasm_setup_tls();
+hidden void __wasm_init_environ();
 
 hidden void __init_libc(char **, char *);
 hidden void __init_tls(size_t *);
