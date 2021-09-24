@@ -1,4 +1,11 @@
-static char *wasm_static_env[] = ["TERM=xterm-256color", NULL];
+#include <stddef.h>
+#include <unistd.h>
+#include "libc.h"
+
+static char *wasm_static_env[] = {
+	"TERM=xterm-256color",
+	NULL
+};
 static void wasm_init_environ()
 {
 	// TODO: read this from the worker
