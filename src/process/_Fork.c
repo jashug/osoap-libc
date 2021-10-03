@@ -9,12 +9,7 @@
 static void dummy(int x) { }
 weak_alias(dummy, __aio_atfork);
 
-size_t osoap_fork_stack_size = 1024; // bytes
-
-void __osoap_set_fork_stack_size(size_t size)
-{
-	osoap_fork_stack_size = size;
-}
+extern pid_t __really_fork(void *);
 
 pid_t _Fork(void)
 {
@@ -23,11 +18,7 @@ pid_t _Fork(void)
 	__block_all_sigs(&set);
 	__aio_atfork(-1);
 	LOCK(__abort_lock);
-	int stack_buffer[osoap_fork_stack_size >> 2];
-	struct __asyncify_stack stack_buf;
-	stack_buf.start = (void *)&stack_buffer;
-	stack_buf.end = ((void *)&stack_buffer) + sizeof(stack_buffer);
-	ret = __syscall_ret(__osoap_fork(&__pthread_self()->sys_buf, &stack_buf));
+	ret = __really_fork(&__pthread_self()->sys_buf);
 	__osoap_poll_signals();
 	if (!ret) {
 		pthread_t self = __pthread_self();

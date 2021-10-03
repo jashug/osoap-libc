@@ -76,7 +76,7 @@ struct __WasmLongjmpArgs {
   void *env;
   int val;
 };
-struct __WasmLongjmpArgs __wasm_longjmp_args;
+__thread struct __WasmLongjmpArgs __wasm_longjmp_args;
 
 void __wasm_longjmp(void *env, int val)
 {
