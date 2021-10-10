@@ -8,6 +8,7 @@ pid_t __osoap_gettid()
 	uint32_t flags = __osoap_send_syscall(sys_buf);
 	pid_t ret = sys_buf->u.pid_return;
 	__osoap_process_signals_after_syscall(sys_buf, &flags);
+	return ret;
 }
 
 pid_t __osoap_getpid()
@@ -17,6 +18,7 @@ pid_t __osoap_getpid()
 	uint32_t flags = __osoap_send_syscall(sys_buf);
 	pid_t ret = sys_buf->u.pid_return;
 	__osoap_process_signals_after_syscall(sys_buf, &flags);
+	return ret;
 }
 
 pid_t __osoap_getppid()
@@ -26,4 +28,5 @@ pid_t __osoap_getppid()
 	uint32_t flags = __osoap_send_syscall(sys_buf);
 	pid_t ret = sys_buf->u.pid_return;
 	__osoap_process_signals_after_syscall(sys_buf, &flags);
+	return ret;
 }
