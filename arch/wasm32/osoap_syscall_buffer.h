@@ -18,9 +18,13 @@
 #define __OSOAP_SYS_TAGR_signal_then_retry 6
 #define __OSOAP_SYS_TAGW_exit_thread 7
 
-#define __OSOAP_SYS_TAGW_gettid 9
+#define __OSOAP_SYS_TAGW_fork 9
 
-#define __OSOAP_SYS_TAGW_fork 11
+#define __OSOAP_SYS_TAGW_gettid 11
+
+#define __OSOAP_SYS_TAGW_getpid 13
+
+#define __OSOAP_SYS_TAGW_getppid 15
 
 struct __osoap_pathname {
 	int rootfd;
