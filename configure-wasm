@@ -8,5 +8,5 @@
   --disable-optimize \
   --enable-debug \
   CC="clang" \
-  CFLAGS="--target=wasm32 -pthread -ftls-model=local-exec -O0 -fwasm-exceptions" \
+  CFLAGS="--target=wasm32 -pthread -ftls-model=local-exec -O0 -fwasm-exceptions -mllvm -wasm-enable-sjlj" \
   CROSS_COMPILE=llvm-
