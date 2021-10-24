@@ -13,18 +13,12 @@
 #define __OSOAP_SYS_TAGW_linux_syscall 1
 #define __OSOAP_SYS_TAGR_linux_syscall_return 2
 #define __OSOAP_SYS_TAGW_poll_signals 3
-#define __OSOAP_SYS_TAGR_pid_return 4
+#define __OSOAP_SYS_TAGR_signal_then_retry 4
 #define __OSOAP_SYS_TAGW_exit_process 5
-#define __OSOAP_SYS_TAGR_signal_then_retry 6
+
 #define __OSOAP_SYS_TAGW_exit_thread 7
 
 #define __OSOAP_SYS_TAGW_fork 9
-
-#define __OSOAP_SYS_TAGW_gettid 11
-
-#define __OSOAP_SYS_TAGW_getpid 13
-
-#define __OSOAP_SYS_TAGW_getppid 15
 
 struct __osoap_pathname {
 	int rootfd;
@@ -41,15 +35,14 @@ struct __osoap_syscall_buffer {
 	union {
 		struct {
 			long n;
-			long args[7];
 			uint32_t cnt;
+			long long args[7];
 		} linux_syscall;
-		long linux_syscall_return;
+		long long linux_syscall_return;
 		int exit_process_code;
-		pid_t pid_return;
 		struct {
 			void *stack_buf;
-			uint32_t saved_globals[8];
+			uint32_t saved_globals[15];
 		} fork;
 	} u;
 };

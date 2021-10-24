@@ -3,5 +3,5 @@
 
 pid_t getppid(void)
 {
-	return __osoap_getppid();
+	return __syscall(SYS_getppid);
 }

@@ -19,11 +19,11 @@
 #endif
 
 #ifndef __scc
-#define __scc(X) ((long) (X))
-typedef long syscall_arg_t;
+#define __scc(X) ((long long) (X))
+typedef long long syscall_arg_t;
 #endif
 
-hidden long __syscall_ret(unsigned long),
+hidden long long __syscall_ret(unsigned long long),
 	__syscall_cp(syscall_arg_t, syscall_arg_t, syscall_arg_t, syscall_arg_t,
 	             syscall_arg_t, syscall_arg_t, syscall_arg_t);
 
@@ -58,22 +58,22 @@ hidden long __syscall_ret(unsigned long),
 #define __syscall_cp(...) __SYSCALL_DISP(__syscall_cp,__VA_ARGS__)
 #define syscall_cp(...) __syscall_ret(__syscall_cp(__VA_ARGS__))
 
-static inline long __alt_socketcall(int sys, int sock, int cp, long a, long b, long c, long d, long e, long f)
+static inline long long __alt_socketcall(int sys, int sock, int cp, long long a, long long b, long long c, long long d, long long e, long long f)
 {
-	long r;
+	long long r;
 	if (cp) r = __syscall_cp(sys, a, b, c, d, e, f);
 	else r = __syscall(sys, a, b, c, d, e, f);
 	if (r != -ENOSYS) return r;
 #ifdef SYS_socketcall
-	if (cp) r = __syscall_cp(SYS_socketcall, sock, ((long[6]){a, b, c, d, e, f}));
-	else r = __syscall(SYS_socketcall, sock, ((long[6]){a, b, c, d, e, f}));
+	if (cp) r = __syscall_cp(SYS_socketcall, sock, ((long long[6]){a, b, c, d, e, f}));
+	else r = __syscall(SYS_socketcall, sock, ((long long[6]){a, b, c, d, e, f}));
 #endif
 	return r;
 }
 #define __socketcall(nm, a, b, c, d, e, f) __alt_socketcall(SYS_##nm, __SC_##nm, 0, \
-	(long)(a), (long)(b), (long)(c), (long)(d), (long)(e), (long)(f))
+	(long long)(a), (long long)(b), (long long)(c), (long long)(d), (long long)(e), (long long)(f))
 #define __socketcall_cp(nm, a, b, c, d, e, f) __alt_socketcall(SYS_##nm, __SC_##nm, 1, \
-	(long)(a), (long)(b), (long)(c), (long)(d), (long)(e), (long)(f))
+	(long long)(a), (long long)(b), (long long)(c), (long long)(d), (long long)(e), (long long)(f))
 
 /* fixup legacy 16-bit junk */
 

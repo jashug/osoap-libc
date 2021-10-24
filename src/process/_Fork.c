@@ -22,7 +22,7 @@ pid_t _Fork(void)
 	__osoap_poll_signals();
 	if (!ret) {
 		pthread_t self = __pthread_self();
-		self->tid = __osoap_gettid();
+		self->tid = __syscall(SYS_gettid);
 		self->robust_list.off = 0;
 		self->robust_list.pending = 0;
 		self->next = self->prev = self;
