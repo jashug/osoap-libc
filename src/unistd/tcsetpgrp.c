@@ -4,6 +4,6 @@
 
 int tcsetpgrp(int fd, pid_t pgrp)
 {
-	int pgrp_int = pgrp;
+	pid_t pgrp_int = pgrp;
 	return ioctl(fd, TIOCSPGRP, &pgrp_int);
 }
