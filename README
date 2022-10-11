@@ -2,7 +2,7 @@
     osoap libc
 
 osoap libc (forked from musl) is intendend to be the default libc for
-an experimental in-browser operating system.
+an experimental in-browser operating system (https://github.com/jashug/OSoap).
 
 more information on musl can be found at
 
