@@ -1,86 +1,32 @@
 /*
- * Copyright 2020 The Emscripten Authors
- * Modified by Jasper Hugunin.
+ * Copyright 2020 Jasper Hugunin
  * Under MIT license.
  */
 #include <stdint.h>
 #include <stdlib.h>
 #include <setjmp.h>
 
-// 0 - Nothing thrown
-// 1 - Exception thrown
-// Other values - jmpbuf pointer in the case that longjmp was thrown
-static uintptr_t setjmpId = 0;
+extern hidden size_t __default_async_buffer_size;
 
-typedef struct TableEntry {
-  uintptr_t id;
-  uint32_t label;
-} TableEntry;
+__attribute__((import_name("setjmp")))
+hidden int __osoap_setjmp(__jmp_buf *);
+__attribute__((import_name("longjmp")))
+hidden int __osoap_longjmp(struct __asyncify_stack *, struct __asyncify_stack *, int);
 
-static uint32_t __TempRet0;
-
-static void __setTempRet0(uint32_t value)
+int setjmp(jmp_buf buf)
 {
-	__TempRet0 = value;
+	buf->__jb.async_piece.start = &buf->__jb.stack_buffer[0];
+	buf->__jb.async_piece.end = &buf->__jb.stack_buffer[sizeof(buf->__jb.stack_buffer) / sizeof(buf->__jb.stack_buffer[0])];
+	return __osoap_setjmp(&buf->__jb);
 }
-weak_alias(__setTempRet0, setTempRet0);
 
-uint32_t __getTempRet0(void)
+void longjmp(jmp_buf buf, int value)
 {
-	return __TempRet0;
-}
-weak_alias(__getTempRet0, getTempRet0);
-
-static TableEntry* __saveSetjmp(uintptr_t* env, uint32_t label, TableEntry* table, uint32_t size) {
-  // Not particularly fast: slow table lookup of setjmpId to label. But setjmp
-  // prevents relooping anyhow, so slowness is to be expected. And typical case
-  // is 1 setjmp per invocation, or less.
-  uint32_t i = 0;
-  setjmpId++;
-  *env = setjmpId;
-  while (i < size) {
-    if (table[i].id == 0) {
-      table[i].id = setjmpId;
-      table[i].label = label;
-      // prepare next slot
-      table[i + 1].id = 0;
-      setTempRet0(size);
-      return table;
-    }
-    i++;
-  }
-  // grow the table
-  size *= 2;
-  table = (TableEntry*)realloc(table, sizeof(TableEntry) * (size +1));
-  table = __saveSetjmp(env, label, table, size);
-  setTempRet0(size); // FIXME: unneeded?
-  return table;
-}
-weak_alias(__saveSetjmp, saveSetjmp);
-
-uint32_t __testSetjmp(uintptr_t id, TableEntry* table, uint32_t size) {
-  uint32_t i = 0;
-  while (i < size) {
-    uintptr_t curr = table[i].id;
-    if (curr == 0) break;
-    if (curr == id) {
-      return table[i].label;
-    }
-    i++;
-  }
-  return 0;
-}
-weak_alias(__testSetjmp, testSetjmp);
-
-struct __WasmLongjmpArgs {
-  void *env;
-  int val;
-};
-__thread struct __WasmLongjmpArgs __wasm_longjmp_args;
-
-void __wasm_longjmp(void *env, int val)
-{
-	__wasm_longjmp_args.env = env;
-	__wasm_longjmp_args.val = val;
-	__builtin_wasm_throw(1, &__wasm_longjmp_args);
+	size_t size = 1024;
+	char stack_buffer[size];
+	struct __asyncify_stack stack_buf;
+	stack_buf.start = &stack_buffer[0];
+	stack_buf.end = &stack_buffer[size];
+	buf->__jb.async_piece.start = buf->__jb.unwound;
+	__osoap_longjmp(&stack_buf, &buf->__jb.async_piece, value);
 }

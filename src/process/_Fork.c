@@ -9,7 +9,27 @@
 static void dummy(int x) { }
 weak_alias(dummy, __aio_atfork);
 
-extern pid_t __really_fork(void *);
+struct __asyncify_stack {
+	void *start, *end;
+};
+
+__attribute__((import_name("fork")))
+hidden pid_t __osoap_fork(struct __osoap_syscall_buffer *, struct __asyncify_stack *);
+
+static pid_t __really_fork(struct __osoap_syscall_buffer *sysbuf)
+{
+	size_t size = 1024;
+	char stack_buffer[size];
+	struct __asyncify_stack stack_buf;
+	stack_buf.start = &stack_buffer[0];
+	stack_buf.end = &stack_buffer[size];
+	pid_t ret = __osoap_fork(sysbuf, &stack_buf);
+	if (ret < 0 && ret > -4096) {
+		errno = -ret;
+		return -1;
+	}
+	return ret;
+}
 
 pid_t _Fork(void)
 {
