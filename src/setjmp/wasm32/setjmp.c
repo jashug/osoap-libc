@@ -13,11 +13,22 @@ hidden int __osoap_setjmp(__jmp_buf *);
 __attribute__((import_name("longjmp")))
 hidden int __osoap_longjmp(struct __asyncify_stack *, struct __asyncify_stack *, int);
 
-int setjmp(jmp_buf buf)
+int sigsetjmp(sigjmp_buf buf, int savemask)
 {
 	buf->__jb.async_piece.start = &buf->__jb.stack_buffer[0];
 	buf->__jb.async_piece.end = &buf->__jb.stack_buffer[sizeof(buf->__jb.stack_buffer) / sizeof(buf->__jb.stack_buffer[0])];
+	// TODO: pass in the savemask
 	return __osoap_setjmp(&buf->__jb);
+}
+
+int setjmp(jmp_buf buf)
+{
+	return sigsetjmp(buf, 0);
+}
+
+void siglongjmp(sigjmp_buf buf, int value)
+{
+	longjmp(buf, value);
 }
 
 void longjmp(jmp_buf buf, int value)
