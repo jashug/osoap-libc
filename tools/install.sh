@@ -52,6 +52,7 @@ ln -s "$1" "$tmp"
 else
 cat < "$1" > "$tmp"
 chmod "$mode" "$tmp"
+touch -r "$1" "$tmp"
 fi
 
 mv -f "$tmp" "$2"
